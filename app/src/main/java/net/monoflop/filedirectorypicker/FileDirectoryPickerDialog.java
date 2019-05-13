@@ -9,6 +9,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -35,6 +36,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
@@ -56,14 +58,23 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 
 	@BindView(R.id.structureRecycler) RecyclerView structureRecycler;
 
+	@BindView(R.id.cancelButton) Button cancelButton;
+	@BindView(R.id.selectButton) Button selectButton;
+
 	private final Comparator<Entry> defaultSortingComperator = (o1, o2) -> o1.getName().compareTo(o2.getName());
 
-	//Parameters
-	private boolean enableExternalStorage;
-	private boolean enableInternalStorage;
-	private boolean preferExternalStorage;
-
 	private boolean requestPermission;
+
+	private boolean selectFiles;
+	private boolean selectFolders;
+
+	private boolean singleFileMode;
+	private boolean singleFolderMode;
+
+	private boolean showHidden;
+
+	private PickerResultListener pickerResultListener;
+	private PickerErrorListener pickerErrorListener;
 
 	//Vars
 	private File rootDirectory;
@@ -93,14 +104,37 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			throw new IllegalArgumentException("FileDirectoryPickerDialog is missing a bundle");
 		}
 
-		enableExternalStorage = bundle.getBoolean("enableExternalStorage");
-		enableInternalStorage = bundle.getBoolean("enableInternalStorage");
-		preferExternalStorage = bundle.getBoolean("preferExternalStorage");
-
 		requestPermission = bundle.getBoolean("requestPermission");
+		selectFiles = bundle.getBoolean("selectFiles");
+		selectFolders = bundle.getBoolean("selectFolders");
+		singleFileMode = bundle.getBoolean("singleFileMode");
+		singleFolderMode = bundle.getBoolean("singleFolderMode");
+		showHidden = bundle.getBoolean("showHidden");
+
+		if(bundle.containsKey("pickerResultListener"))
+			pickerResultListener = bundle.getParcelable("pickerResultListener");
+
+		if(bundle.containsKey("pickerErrorListener"))
+			pickerErrorListener = bundle.getParcelable("pickerErrorListener");
+
+		EntryAdapter.ViewMode viewMode;
+		if(singleFileMode) viewMode = EntryAdapter.ViewMode.FilesOnly;
+		else if(singleFolderMode) viewMode = EntryAdapter.ViewMode.FoldersOnly;
+		else
+		{
+			if(selectFiles && selectFolders)
+			{
+				viewMode = EntryAdapter.ViewMode.Default;
+			}
+			else
+			{
+				if(selectFiles)viewMode = EntryAdapter.ViewMode.FilesOnly;
+				else viewMode = EntryAdapter.ViewMode.FoldersOnly;
+			}
+		}
 
 		entryList = new ArrayList<>();
-		entryAdapter = new EntryAdapter(requireContext(), entryList, this);
+		entryAdapter = new EntryAdapter(requireContext(), entryList, this, viewMode);
 	}
 
 	@Nullable
@@ -120,17 +154,23 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		DividerItemDecoration itemDecor = new DividerItemDecoration(requireContext(), RecyclerView.VERTICAL);
 		structureRecycler.addItemDecoration(itemDecor);
 
-		//Select root directory
-		//Start with external storage
-		if(preferExternalStorage)
-		{
-
-		}
-		//Start with internal storage
+		if(singleFileMode) fileDirTitle.setText("Select one File");
+		else if(singleFolderMode) fileDirTitle.setText("Select one Folder");
 		else
 		{
-			//@TODO
+			if(selectFiles && selectFolders)
+			{
+				fileDirTitle.setText("Select File(s) or Folder(s)");
+			}
+			else
+			{
+				if(selectFiles)fileDirTitle.setText("Select File(s)");
+				else fileDirTitle.setText("Select Folder(s)");
+			}
 		}
+
+		//Select root directory
+		new Thread(this::loadInternalStorage).start();
 
 		return view;
 	}
@@ -158,14 +198,13 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 							//Navigate back
 							Log.d(APP_TAG, "Navigate back");
 							File newRootDir = new File(entryList.get(0).getPath());
-							File oldRootDir = currentRootDirectory;
 							if(newRootDir.exists() && newRootDir.isDirectory())
 							{
 								currentRootDirectory = newRootDir;
 								requireActivity().runOnUiThread(() ->
 								{
 									fileDirPath.setText(newRootDir.getAbsolutePath());
-									loadFolderStructure(oldRootDir, newRootDir);
+									loadFolderStructure(newRootDir);
 								});
 							}
 						}
@@ -180,11 +219,32 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		});
 	}
 
+	@OnClick(R.id.cancelButton)
+	public void cancelButtonOnClick()
+	{
+		getDialog().dismiss();
+	}
+
+	@OnClick(R.id.selectButton)
+	public void selectButtonOnClick()
+	{
+		//@TODO
+	}
+
 	@Override
 	public void onEntrySelected(Entry entry, boolean selected)
 	{
-		//Add folder / file to list of selected entries.
 		//@TODO
+		if(singleFileMode || singleFolderMode)
+		{
+			//Return
+		}
+		else
+		{
+			//Add folder / file to list of selected entries.
+		}
+
+		Log.d(APP_TAG, "onEntrySelected");
 	}
 
 	@Override
@@ -192,33 +252,20 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	{
 		//Select new root folder
 		File newRootDir = new File(entry.getPath());
-		File oldRootDir = currentRootDirectory;
 		if(newRootDir.exists() && newRootDir.isDirectory())
 		{
 			currentRootDirectory = newRootDir;
 			requireActivity().runOnUiThread(() ->
 			{
 				fileDirPath.setText(newRootDir.getAbsolutePath());
-				loadFolderStructure(oldRootDir, newRootDir);
+				loadFolderStructure(newRootDir);
 				structureRecycler.scrollTo(0,0);
 			});
 		}
 	}
 
+
 	private void loadInternalStorage()
-	{
-		File internalStorageRoot = Environment.getExternalStorageDirectory();
-		rootDirectory = internalStorageRoot;
-		currentRootDirectory = internalStorageRoot;
-
-		requireActivity().runOnUiThread(() ->
-		{
-			fileDirPath.setText(internalStorageRoot.getAbsolutePath());
-			loadFolderStructure(internalStorageRoot, internalStorageRoot);
-		});
-	}
-
-	private void loadExternalStorage()
 	{
 		if(requestPermission)
 		{
@@ -236,7 +283,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 							requireActivity().runOnUiThread(() ->
 							{
 								fileDirPath.setText(externalStorageRoot.getAbsolutePath());
-								loadFolderStructure(externalStorageRoot, externalStorageRoot);
+								loadFolderStructure(externalStorageRoot);
 							});
 						}
 
@@ -270,13 +317,13 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				requireActivity().runOnUiThread(() ->
 				{
 					fileDirPath.setText(externalStorageRoot.getAbsolutePath());
-					loadFolderStructure(externalStorageRoot, externalStorageRoot);
+					loadFolderStructure(externalStorageRoot);
 				});
 			}
 		}
 	}
 
-	private void loadFolderStructure(@NonNull File oldRootDir, @NonNull File newRootDir)
+	private void loadFolderStructure(@NonNull File newRootDir)
 	{
 		if(newRootDir.canRead())
 		{
@@ -288,6 +335,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			{
 				if(subEntry.canRead())
 				{
+					//Skip hidden files and folders
+					if(!showHidden && subEntry.isHidden())continue;
+
 					Entry entry = new Entry();
 					entry.setName(subEntry.getName());
 
@@ -302,6 +352,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 
 					if(subEntry.isFile())
 					{
+						//Ignore files if we are in folder mode
+						//if(singleFolderMode || (!selectFiles && selectFolders))continue;
+
 						entry.setEntryType(EntryType.File);
 						entry.setInfo("Size: " + FileUtils.humanReadableByteCount(getResources().getConfiguration().locale, subEntry.length(), true));
 					}
@@ -323,9 +376,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			if(!newRootDir.equals(rootDirectory))
 			{
 				Entry entry = new Entry();
-				entry.setName("...");
-				entry.setInfo("Go back");
-				entry.setPath(oldRootDir.getAbsolutePath());
+				entry.setName("Navigate back");
+				entry.setInfo("...");
+				entry.setPath(newRootDir.getParentFile().getAbsolutePath());
 				entry.setEntryType(EntryType.None);
 				entryList.add(entry);
 			}
@@ -389,45 +442,28 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	public static class Builder
 	{
 		//Default values
-		//Storage root
-		private boolean enableExternalStorage = true;
-		private boolean enableInternalStorage = true;
-		private boolean preferExternalStorage = true;
-
 		//Permission
 		private boolean requestPermission = true;
 
-		//
 		private boolean selectFiles = true;
 		private boolean selectFolders = true;
+
+		private boolean singleFileMode = false;
+		private boolean singleFolderMode = false;
+
+		private boolean showHidden = false;
+
+		//@TODO add (file and folder) filter
+		//@TODO add start folder
+		//@TODO add ability to restrict picker inside a folder
+
+		private PickerResultListener pickerResultListener;
+		private PickerErrorListener pickerErrorListener;
 
 		public Builder(){}
 
 		public Builder build()
 		{
-			if(!enableExternalStorage && !enableInternalStorage)
-			{
-				throw new IllegalArgumentException("You disabled all storage types.");
-			}
-
-			return this;
-		}
-
-		public Builder enableExternalStorage(boolean enable)
-		{
-			this.enableExternalStorage = enable;
-			return this;
-		}
-
-		public Builder enableInternalStorage(boolean enable)
-		{
-			this.enableInternalStorage = enable;
-			return this;
-		}
-
-		public Builder preferExternalStorage(boolean prefer)
-		{
-			this.preferExternalStorage = prefer;
 			return this;
 		}
 
@@ -437,14 +473,65 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			return this;
 		}
 
+		public Builder selectFiles(boolean enabled)
+		{
+			this.selectFiles = enabled;
+			return this;
+		}
+
+		public Builder selectFolders(boolean enabled)
+		{
+			this.selectFolders = enabled;
+			return this;
+		}
+
+		public Builder singleFileMode(boolean enabled)
+		{
+			this.singleFileMode = enabled;
+			return this;
+		}
+
+		public Builder singleFolderMode(boolean enabled)
+		{
+			this.singleFolderMode = enabled;
+			return this;
+		}
+
+		public Builder showHidden(boolean show)
+		{
+			this.showHidden = show;
+			return this;
+		}
+
+		public Builder withListener(@NonNull PickerResultListener pickerResultListener)
+		{
+			this.pickerResultListener = pickerResultListener;
+			return this;
+		}
+
+		public Builder withErrorListener(@NonNull PickerErrorListener pickerErrorListener)
+		{
+			this.pickerErrorListener = pickerErrorListener;
+			return this;
+		}
+
 		private Bundle toBundle()
 		{
 			Bundle bundle = new Bundle();
-			bundle.putBoolean("enableExternalStorage", enableExternalStorage);
-			bundle.putBoolean("enableInternalStorage", enableInternalStorage);
-			bundle.putBoolean("preferExternalStorage", preferExternalStorage);
 
 			bundle.putBoolean("requestPermission", requestPermission);
+
+			bundle.putBoolean("selectFiles", selectFiles);
+			bundle.putBoolean("selectFolders", selectFolders);
+
+			bundle.putBoolean("singleFileMode", singleFileMode);
+			bundle.putBoolean("singleFolderMode", singleFolderMode);
+
+			bundle.putBoolean("showHidden", showHidden);
+
+			bundle.putParcelable("pickerResultListener", pickerResultListener);
+			bundle.putParcelable("pickerErrorListener", pickerErrorListener);
+
 			return bundle;
 		}
 	}

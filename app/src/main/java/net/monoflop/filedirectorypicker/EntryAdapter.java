@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -19,17 +20,29 @@ import butterknife.ButterKnife;
 
 class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 {
+	enum ViewMode
+	{
+		Default, //Files and folders are shown and selectable
+		FilesOnly, //Files and folders are shown but only files are selectable
+		FoldersOnly //Only folders are shown and selectable
+	}
+
 	private Context context;
 	private List<FileDirectoryPickerDialog.Entry> entryList;
 	private EntrySelectedCallback entrySelectedCallback;
+	private ViewMode viewMode;
 
 	EntryAdapter(@NonNull Context context,
 	             @NonNull List<FileDirectoryPickerDialog.Entry> entryList,
-	             @NonNull EntrySelectedCallback entrySelectedCallback)
+	             @NonNull EntrySelectedCallback entrySelectedCallback,
+	             @Nullable ViewMode viewMode)
 	{
 		this.context = context;
 		this.entryList = entryList;
 		this.entrySelectedCallback = entrySelectedCallback;
+
+		this.viewMode = viewMode;
+		if(this.viewMode == null)this.viewMode = ViewMode.Default;
 	}
 
 	@Override
@@ -51,16 +64,23 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 		if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.Folder)
 		{
 			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_folder_black_24dp));
-			holder.entryCheckBox.setVisibility(View.VISIBLE);
+			if(viewMode == ViewMode.Default || viewMode == ViewMode.FoldersOnly)
+				holder.entryCheckBox.setVisibility(View.VISIBLE);
+			else
+				holder.entryCheckBox.setVisibility(View.GONE);
 		}
 		else if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.File)
 		{
 			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_insert_drive_file_black_24dp));
-			holder.entryCheckBox.setVisibility(View.VISIBLE);
+
+			if(viewMode == ViewMode.Default || viewMode == ViewMode.FilesOnly)
+				holder.entryCheckBox.setVisibility(View.VISIBLE);
+			else
+				holder.entryCheckBox.setVisibility(View.GONE);
 		}
 		else
 		{
-			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_folder_black_24dp));
+			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_arrow_back_black_24dp));
 			holder.entryCheckBox.setVisibility(View.GONE);
 		}
 
@@ -71,8 +91,10 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 		{
 			if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.File)
 			{
-				holder.entryCheckBox.setChecked(!holder.entryCheckBox.isChecked());
-				entrySelectedCallback.onEntrySelected(entry, holder.entryCheckBox.isChecked());
+				if(viewMode == ViewMode.Default || viewMode == ViewMode.FilesOnly)
+				{
+					holder.entryCheckBox.setChecked(!holder.entryCheckBox.isChecked());
+				}
 			}
 			else
 			{
@@ -81,7 +103,9 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 		});
 
 		holder.entryCheckBox.setOnCheckedChangeListener((buttonView, isChecked) ->
-				entrySelectedCallback.onEntrySelected(entry, isChecked));
+		{
+			entrySelectedCallback.onEntrySelected(entry, isChecked);
+		});
 	}
 
 	@Override
