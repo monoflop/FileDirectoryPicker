@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:clickable="true"
+    android:focusable="false">
+
+    <!-- force dialog full screen -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"/>
+
+    <!-- Header bar layout -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        android:background="@color/colorAccent">
+
+        <ImageView
+            android:id="@+id/fileDirFolderImage"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_folder_black_24dp"
+            android:tint="@color/white"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/fileDirFolderImage"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="20dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/fileDirTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:text="Select folder"/>
+
+            <TextView
+                android:id="@+id/fileDirPath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:text=""/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- File and folder structure-->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/structureRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minHeight="200dp"
+            android:layout_alignParentTop="true"
+            android:layout_above="@id/bottomLayout"
+            android:orientation="vertical"
+            android:scrollbars="vertical"/>
+
+        <LinearLayout
+            android:id="@+id/bottomLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:padding="16dp"
+            android:orientation="horizontal">
+
+            <!-- @TODO -->
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+
+
+
+</LinearLayout>
