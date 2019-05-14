@@ -1,15 +1,10 @@
 package net.monoflop.filedirectorypicker;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
-import android.os.Parcel;
 import android.util.Log;
 import android.widget.Button;
 
-import java.io.File;
-import java.util.List;
+import androidx.appcompat.app.AppCompatActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -35,9 +30,11 @@ public class MainActivity extends AppCompatActivity
 				new FileDirectoryPickerDialog.Builder()
 						.selectFiles(true)
 						.selectFolders(false)
-						.withListener((selectedFiles, selectedFolders) ->
+						//.customTitle("Select opt key")
+						//.filterFileEndings("otpkey")
+						.withResultListener((selectedFiles, selectedFolders) ->
 						{
-							Log.d("Debug", "Received files and folders");
+							Log.d("Debug", "Received " + selectedFiles.size() + " files and " + selectedFolders.size() + " folders");
 						})
 						.build());
 

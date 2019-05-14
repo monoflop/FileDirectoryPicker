@@ -61,6 +61,9 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 	{
 		FileDirectoryPickerDialog.Entry entry = entryList.get(position);
 
+		holder.entryCheckBox.setOnCheckedChangeListener(null);
+		holder.entryCheckBox.setChecked(entry.isSelected());
+
 		if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.Folder)
 		{
 			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_folder_black_24dp));
@@ -103,9 +106,7 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 		});
 
 		holder.entryCheckBox.setOnCheckedChangeListener((buttonView, isChecked) ->
-		{
-			entrySelectedCallback.onEntrySelected(entry, isChecked);
-		});
+				entrySelectedCallback.onEntrySelected(entry, isChecked));
 	}
 
 	@Override
