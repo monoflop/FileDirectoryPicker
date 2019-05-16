@@ -1,11 +1,28 @@
-package net.monoflop.filedirectorypicker;
+/*
+ * Copyright 2019 Philipp Kutsch
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package net.monoflop.filedirectorypicker;
 
 import android.Manifest;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +33,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -44,14 +62,10 @@ import static android.text.format.DateUtils.FORMAT_SHOW_TIME;
 import static android.text.format.DateUtils.FORMAT_SHOW_YEAR;
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
-//@TODO recursively select all files and folders if you select a folder
-//@TODO add start folder
-//@TODO add ability to restrict picker inside a folder
 @SuppressWarnings("WeakerAccess")
 public class FileDirectoryPickerDialog extends DialogFragment implements EntryAdapter.EntrySelectedCallback
 {
-	public static boolean DEBUG = true;
-	private static final String APP_TAG = "[FDP]";
+	public static final int ERROR_PERMISSION_DENIED = 1;
 
 	enum EntryType
 	{
@@ -69,7 +83,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	@BindView(R.id.cancelButton) Button cancelButton;
 	@BindView(R.id.selectButton) Button selectButton;
 
-	private final Comparator<Entry> defaultSortingComperator = (o1, o2) -> o1.getName().compareTo(o2.getName());
+	private final Comparator<Entry> defaultSortingComparator = (o1, o2) -> o1.getName().compareTo(o2.getName());
 
 	private boolean requestPermission;
 
@@ -80,10 +94,13 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	private boolean singleFolderMode;
 
 	private boolean showHidden;
+	private boolean showEmptyFolders;
 
 	//Appearance
 	private String customTitle;
 	private boolean showAnimation;
+	private int animationStyle;
+	private boolean showDirectoryInfo;
 
 	private PickerResultListener pickerResultListener;
 	private PickerErrorListener pickerErrorListener;
@@ -99,6 +116,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	private List<File> selectedFiles;
 	private List<File> selectedFolders;
 
+	private HandlerThread handlerThread;
+	private Handler utilityHandler;
+
 	public FileDirectoryPickerDialog(){}
 
 	@NonNull
@@ -107,6 +127,18 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		FileDirectoryPickerDialog fileDirectoryPickerDialog = new FileDirectoryPickerDialog();
 		fileDirectoryPickerDialog.setArguments(builder.toBundle());
 		return fileDirectoryPickerDialog;
+	}
+
+	@Override
+	public void onActivityCreated(@Nullable Bundle savedInstanceState)
+	{
+		super.onActivityCreated(savedInstanceState);
+
+		if(showAnimation)
+		{
+			if (getDialog() != null && getDialog().getWindow() != null)
+				getDialog().getWindow().getAttributes().windowAnimations = animationStyle;
+		}
 	}
 
 	@Override
@@ -127,11 +159,14 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		singleFileMode = bundle.getBoolean("singleFileMode");
 		singleFolderMode = bundle.getBoolean("singleFolderMode");
 		showHidden = bundle.getBoolean("showHidden");
+		showEmptyFolders = bundle.getBoolean("showEmptyFolders");
 
 		if(bundle.containsKey("customTitle"))
 			customTitle = bundle.getString("customTitle");
 
 		showAnimation = bundle.getBoolean("showAnimation");
+		animationStyle = bundle.getInt("animationStyle");
+		showDirectoryInfo = bundle.getBoolean("showDirectoryInfo");
 
 		if(bundle.containsKey("pickerResultListener"))
 			pickerResultListener = bundle.getParcelable("pickerResultListener");
@@ -181,20 +216,21 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		structureRecycler.setLayoutManager(linearLayoutManager);
 		DividerItemDecoration itemDecor = new DividerItemDecoration(requireContext(), RecyclerView.VERTICAL);
 		structureRecycler.addItemDecoration(itemDecor);
+		structureRecycler.setItemAnimator(null);
 
-		if(singleFileMode) fileDirTitle.setText("Select one File");
-		else if(singleFolderMode) fileDirTitle.setText("Select one Folder");
+		if(singleFileMode) fileDirTitle.setText(getString(R.string.picker_title_single_file));
+		else if(singleFolderMode) fileDirTitle.setText(getString(R.string.picker_title_single_folder));
 		else
 		{
 			if(selectFiles && selectFolders)
 			{
-				fileDirTitle.setText("Select File(s) or Folder(s)");
+				fileDirTitle.setText(getString(R.string.picker_title_files_and_folders));
 				selectButton.setEnabled(false);
 			}
 			else
 			{
-				if(selectFiles)fileDirTitle.setText("Select File(s)");
-				else fileDirTitle.setText("Select Folder(s)");
+				if(selectFiles)fileDirTitle.setText(getString(R.string.picker_title_files));
+				else fileDirTitle.setText(getString(R.string.picker_title_folders));
 				selectButton.setEnabled(false);
 			}
 		}
@@ -212,6 +248,16 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	public void onResume()
 	{
 		super.onResume();
+
+		//Crawl directories async and show file count and folder size
+		if(showDirectoryInfo)
+		{
+			//Start handler thread
+			handlerThread = new HandlerThread("UtilityHandlerThread");
+			handlerThread.start();
+			Looper looper = handlerThread.getLooper();
+			utilityHandler = new Handler(looper);
+		}
 
 		getDialog().setOnKeyListener((dialog, keyCode, event) ->
 		{
@@ -249,6 +295,18 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			}
 			else return false;
 		});
+	}
+
+	@Override
+	public void onPause()
+	{
+		super.onPause();
+
+		if(showDirectoryInfo)
+		{
+			utilityHandler.removeCallbacksAndMessages(null);
+			handlerThread.quit();
+		}
 	}
 
 	@OnClick(R.id.cancelButton)
@@ -336,11 +394,11 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			if (selectedFilesAndFolders == 0)
 			{
 				selectButton.setEnabled(false);
-				selectButton.setText("Select");
+				selectButton.setText(getString(R.string.button_select));
 			} else
 			{
 				selectButton.setEnabled(true);
-				selectButton.setText("Select (" + selectedFilesAndFolders + ")");
+				selectButton.setText(String.format(getString(R.string.picker_title_select_n), selectedFilesAndFolders));
 			}
 		}
 	}
@@ -352,6 +410,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		File newRootDir = entry.getFile();
 		if(newRootDir.exists() && newRootDir.isDirectory())
 		{
+			if(showDirectoryInfo)
+				utilityHandler.removeCallbacksAndMessages(null);
 			currentRootDirectory = newRootDir;
 			requireActivity().runOnUiThread(() ->
 			{
@@ -388,11 +448,13 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 						@Override
 						public void onPermissionDenied(PermissionDeniedResponse response)
 						{
-							Log.w(APP_TAG, "Permission denied.");
 							if(getDialog() != null)
 							{
 								getDialog().dismiss();
 							}
+
+							if(pickerErrorListener != null)
+								pickerErrorListener.onPickerError(ERROR_PERMISSION_DENIED);
 						}
 
 						@Override
@@ -418,6 +480,16 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 					loadFolderStructure(externalStorageRoot);
 				});
 			}
+			else
+			{
+				if(getDialog() != null)
+				{
+					getDialog().dismiss();
+				}
+
+				if(pickerErrorListener != null)
+					pickerErrorListener.onPickerError(ERROR_PERMISSION_DENIED);
+			}
 		}
 	}
 
@@ -442,12 +514,36 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 					if(subEntry.isDirectory())
 					{
 						//Skip empty directories
-						//if(subEntry.list().length == 0)continue;
+						if(!showEmptyFolders && subEntry.list().length == 0)continue;
 
 						entry.setEntryType(EntryType.Folder);
-						entry.setInfo("Directory");
-						//@TODO maybe check dir size async
-						//entry.setInfo("Size: " + FileUtils.humanReadableByteCount(getResources().getConfiguration().locale, FileUtils.getFolderSize(subEntry), true));
+
+						if(subEntry.list().length == 0)
+							entry.setInfo("Empty Directory");
+						else
+							entry.setInfo("Directory");
+
+						if(showDirectoryInfo)
+						{
+							utilityHandler.post(() ->
+							{
+								FileUtils.FolderInfo folderInfo = FileUtils.getFolderInfo(subEntry);
+								entry.setInfo("Directory "
+										+ folderInfo.getFileCount()
+										+ " File(s) | "
+										+ FileUtils.humanReadableByteCount(getResources().getConfiguration().locale,
+										folderInfo.getSize(),
+										true));
+								if (entryList.indexOf(entry) != -1)
+								{
+									if (getActivity() != null)
+									{
+										getActivity().runOnUiThread(() ->
+												entryAdapter.notifyItemChanged(entryList.indexOf(entry)));
+									}
+								}
+							});
+						}
 					}
 
 					if(subEntry.isFile())
@@ -486,8 +582,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				}
 			}
 
-			Collections.sort(newFolders, defaultSortingComperator);
-			Collections.sort(newFiles, defaultSortingComperator);
+			Collections.sort(newFolders, defaultSortingComparator);
+			Collections.sort(newFiles, defaultSortingComparator);
 
 			entryList.clear();
 
@@ -601,23 +697,35 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	public static class Builder
 	{
 		//Default values
-		//Permission
+		//Behavior
 		private boolean requestPermission = true;
-
 		private boolean selectFiles = true;
 		private boolean selectFolders = true;
-
 		private boolean singleFileMode = false;
 		private boolean singleFolderMode = false;
-
 		private boolean showHidden = false;
+		private boolean showEmptyFolders = false;
+		private String[] fileEndingFilter;
 
 		//Appearance
 		private String customTitle;
 		private boolean showAnimation = true;
+		private int animationStyle = R.style.DialogAnimation;
+		private boolean showDirectoryInfo = false;
 
-		private String[] fileEndingFilter;
+		//@TODO implement styleable dialog
+		private boolean customColors = false;
+		private int headerBackground;
+		private int headerTitle;
+		private int headerPath;
+		private int headerImage;
+		private int background;
+		private int entryImage;
+		private int entryName;
+		private int entryInfo;
+		private int button;
 
+		//Listeners
 		private PickerResultListener pickerResultListener;
 		private PickerErrorListener pickerErrorListener;
 
@@ -664,6 +772,12 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			return this;
 		}
 
+		public Builder showEmptyFolders(boolean show)
+		{
+			this.showEmptyFolders = show;
+			return this;
+		}
+
 		public Builder withResultListener(@NonNull PickerResultListener pickerResultListener)
 		{
 			this.pickerResultListener = pickerResultListener;
@@ -694,6 +808,18 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			return this;
 		}
 
+		public Builder customAnimation(@StyleRes int style)
+		{
+			this.animationStyle = style;
+			return this;
+		}
+
+		public Builder showDirectoryInfo(boolean show)
+		{
+			this.showDirectoryInfo = show;
+			return this;
+		}
+
 		private Bundle toBundle()
 		{
 			Bundle bundle = new Bundle();
@@ -707,11 +833,14 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			bundle.putBoolean("singleFolderMode", singleFolderMode);
 
 			bundle.putBoolean("showHidden", showHidden);
+			bundle.putBoolean("showEmptyFolders", showEmptyFolders);
 
 			if(customTitle != null)
 				bundle.putString("customTitle", customTitle);
 
 			bundle.putBoolean("showAnimation", showAnimation);
+			bundle.putInt("animationStyle", animationStyle);
+			bundle.putBoolean("showDirectoryInfo", showDirectoryInfo);
 
 			if(pickerResultListener != null)
 				bundle.putParcelable("pickerResultListener", pickerResultListener);

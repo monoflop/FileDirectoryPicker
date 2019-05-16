@@ -1,3 +1,19 @@
+/*
+ * Copyright 2019 Philipp Kutsch
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package net.monoflop.filedirectorypicker;
 
 import androidx.annotation.NonNull;
@@ -36,5 +52,62 @@ final class FileUtils
 			}
 		}
 		return size;
+	}
+
+	static FolderInfo getFolderInfo(@NonNull File folder)
+	{
+		long size = 0;
+		long fileCount = 0;
+
+		File[] files = folder.listFiles();
+
+		for(File file : files)
+		{
+			if(file.isFile())
+			{
+				size += file.length();
+				fileCount++;
+			}
+			else
+			{
+				FolderInfo folderInfo = getFolderInfo(file);
+				size += folderInfo.getSize();
+				fileCount += folderInfo.getFileCount();
+			}
+		}
+
+		return new FolderInfo(size, fileCount);
+	}
+
+	static class FolderInfo
+	{
+		private long size;
+		private long fileCount;
+
+		public FolderInfo(long size, long fileCount)
+		{
+			this.size = size;
+			this.fileCount = fileCount;
+		}
+
+		public long getSize()
+		{
+			return size;
+		}
+
+		public void setSize(long size)
+		{
+			this.size = size;
+		}
+
+		public long getFileCount()
+		{
+			return fileCount;
+		}
+
+		public void setFileCount(long fileCount)
+		{
+			this.fileCount = fileCount;
+		}
 	}
 }

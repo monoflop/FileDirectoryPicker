@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
     android:clickable="true"
-    android:focusable="false">
+    android:focusable="false"
+    tools:ignore="KeyboardInaccessibleWidget">
 
-    <!-- force dialog full screen -->
+    <!-- force dialog full screen width -->
     <View
         android:layout_width="match_parent"
         android:layout_height="0dp"/>
@@ -25,7 +27,8 @@
             android:layout_height="50dp"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_folder_black_24dp"
-            android:tint="@color/white"/>
+            android:tint="@color/white"
+            android:contentDescription="@null" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -42,8 +45,7 @@
                 android:layout_gravity="start"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/white"
-                android:text="Select folder"/>
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/fileDirPath"
@@ -79,7 +81,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:orientation="horizontal"
-            android:weightSum="2">
+            android:weightSum="2"
+            android:baselineAligned="false">
 
             <FrameLayout
                 android:layout_width="0dp"
@@ -92,7 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     style="@style/Widget.AppCompat.Button.Borderless.Colored"
-                    android:text="Cancel"/>
+                    android:text="@string/button_cancel"/>
 
             </FrameLayout>
 
@@ -107,16 +110,12 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     style="@style/Widget.AppCompat.Button.Borderless.Colored"
-                    android:text="Select"/>
+                    android:text="@string/button_select"/>
 
             </FrameLayout>
 
         </LinearLayout>
 
     </RelativeLayout>
-
-
-
-
 
 </LinearLayout>
