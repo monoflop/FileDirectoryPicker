@@ -34,6 +34,11 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+/**
+ * Entry recyclerView adapter class.
+ *
+ * @author Philipp Kutsch
+ */
 class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 {
 	enum ViewMode
@@ -77,10 +82,13 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 	{
 		FileDirectoryPickerDialog.Entry entry = entryList.get(position);
 
+		//Removes old listeners of recycled elements
+		//Remove onCheckedChangeListener before setting the selected status.
 		holder.entryCheckBox.setOnCheckedChangeListener(null);
 		holder.entryCheckBox.setChecked(entry.isSelected());
 
-		if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.Folder)
+		//Setup element based on the current view mode and entry type.
+		if(entry.getEntryType() == FileDirectoryPickerDialog.Entry.EntryType.Folder)
 		{
 			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_folder_black_24dp));
 			if(viewMode == ViewMode.Default || viewMode == ViewMode.FoldersOnly)
@@ -88,7 +96,7 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 			else
 				holder.entryCheckBox.setVisibility(View.GONE);
 		}
-		else if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.File)
+		else if(entry.getEntryType() == FileDirectoryPickerDialog.Entry.EntryType.File)
 		{
 			holder.entryImage.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_insert_drive_file_black_24dp));
 
@@ -103,12 +111,14 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 			holder.entryCheckBox.setVisibility(View.GONE);
 		}
 
+		//Set name and info
 		holder.entryName.setText(entry.getName());
 		holder.entryInfo.setText(entry.getInfo());
 
+		//Select entry if its a file otherwise navigate inside the folder.
 		holder.root.setOnClickListener((v) ->
 		{
-			if(entry.getEntryType() == FileDirectoryPickerDialog.EntryType.File)
+			if(entry.getEntryType() == FileDirectoryPickerDialog.Entry.EntryType.File)
 			{
 				if(viewMode == ViewMode.Default || viewMode == ViewMode.FilesOnly)
 				{

@@ -19,9 +19,19 @@ package net.monoflop.filedirectorypicker;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public interface PickerErrorListener extends Parcelable
+import androidx.annotation.NonNull;
+
+import java.io.File;
+import java.util.List;
+
+/**
+ * FileDirectoryPickerDialog result listener.
+ *
+ * @author Philipp Kutsch
+ */
+public interface PickerResultListener extends Parcelable
 {
-	void onPickerError(int error);
+	void onPickerResult(@NonNull List<File> selectedFiles, @NonNull List<File> selectedFolders);
 
 	default int describeContents() { return 0; }
 	default void writeToParcel(Parcel dest, int flags) { }

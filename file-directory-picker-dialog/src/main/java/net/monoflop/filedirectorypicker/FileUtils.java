@@ -30,7 +30,7 @@ final class FileUtils
 	 * Modified version of https://programming.guide/java/formatting-byte-size-to-human-readable-format.html
 	 * @param locale Respect local device settings in string.format
 	 * @param bytes Size in bytes
-	 * @param si Use power of 2 or rounded values
+	 * @param si Use si prefix (power of 2 or rounded values)
 	 * @return Human readable byte count
 	 */
 	static String humanReadableByteCount(@NonNull Locale locale, long bytes, boolean si)
@@ -42,6 +42,23 @@ final class FileUtils
 		return String.format(locale,"%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 
+	/**
+	 * Returns if the external storage is mounted.
+	 *
+	 * @return MEDIA_MOUNTED state of the external storage
+	 */
+	public static boolean isExternalStorageAvailable()
+	{
+		return android.os.Environment.getExternalStorageState().equals(
+				android.os.Environment.MEDIA_MOUNTED);
+	}
+
+	/**
+	 * Recursive calculate the total size of all child files and folders.
+	 *
+	 * @param folder Root folder.
+	 * @return Sum of all files and folders inside the root folder.
+	 */
 	static long getFolderSize(@NonNull File folder)
 	{
 		long size = 0;
@@ -61,6 +78,13 @@ final class FileUtils
 		return size;
 	}
 
+
+	/**
+	 * Recursive calculate the total size and count of all child files and folders.
+	 *
+	 * @param folder Root folder.
+	 * @return Size of the folder and number of child files and folders.
+	 */
 	static FolderInfo getFolderInfo(@NonNull File folder)
 	{
 		long size = 0;
@@ -86,6 +110,9 @@ final class FileUtils
 		return new FolderInfo(size, fileCount);
 	}
 
+	/**
+	 * Class holds size and number of child files and folders.
+	 */
 	static class FolderInfo
 	{
 		private long size;
