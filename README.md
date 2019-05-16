@@ -6,6 +6,8 @@ Simple file and directory picker library for Android.
 * Select folder(s)
 * Filter file extensions
 
+![Screenshot](/image/screen1.png?raw=true "Screenshot")
+
 ## Usage
 
 Add jitpack.io in your root build.gradle
