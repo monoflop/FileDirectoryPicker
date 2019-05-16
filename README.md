@@ -23,20 +23,8 @@ Add the dependency
 
 ```
 dependencies {
-    implementation 'com.github.monoflop:FileDirectoryPicker:master-SNAPSHOT'
+    implementation 'com.github.monoflop:FileDirectoryPicker:1.0.0'
 }
-```
-
-```java
-FileDirectoryPickerDialog directoryPickerDialog = FileDirectoryPickerDialog.newInstance(
-				new FileDirectoryPickerDialog.Builder()
-						.withResultListener((selectedFiles, selectedFolders) ->
-						{
-              //Do something
-						})
-						.build());
-
-directoryPickerDialog.show(getSupportFragmentManager(), null);
 ```
 
 ### Builder
@@ -46,8 +34,8 @@ directoryPickerDialog.show(getSupportFragmentManager(), null);
 | requestPermission | Request READ_EXTERNAL_STORAGE permission | true |
 | selectFiles | Allow the user to select files | true |
 | selectFolders | Allow the user to select folders | true |
-| singleFileMode | Select one file mode | false |
-| singleFolderMode | Select one folder mode | false |
+| singleFileMode | 'Select one file' mode | false |
+| singleFolderMode | 'Select one folder' mode | false |
 | showHidden | Show hidden files and folders | false |
 | showEmptyFolders | Show empty folders | false |
 | withResultListener | Result listener | null |
@@ -58,6 +46,18 @@ directoryPickerDialog.show(getSupportFragmentManager(), null);
 | customAnimation | Customize window animation with style. Overwrite android:windowEnterAnimation and android:windowExitAnimation. | null |
 | showDirectoryInfo | Show folder size and file count | false |
 
+
+```java
+FileDirectoryPickerDialog directoryPickerDialog = FileDirectoryPickerDialog.newInstance(
+new FileDirectoryPickerDialog.Builder()
+  .withResultListener((selectedFiles, selectedFolders) ->
+  {
+    //Do something
+  })
+  .build());
+
+directoryPickerDialog.show(getSupportFragmentManager(), null);
+```
 
 License
 -------
