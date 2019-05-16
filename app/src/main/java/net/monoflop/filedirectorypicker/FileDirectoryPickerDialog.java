@@ -62,7 +62,7 @@ import static android.text.format.DateUtils.FORMAT_SHOW_TIME;
 import static android.text.format.DateUtils.FORMAT_SHOW_YEAR;
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class FileDirectoryPickerDialog extends DialogFragment implements EntryAdapter.EntrySelectedCallback
 {
 	public static final int ERROR_PERMISSION_DENIED = 1;
@@ -74,14 +74,14 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		Folder
 	}
 
-	@BindView(R.id.fileDirFolderImage) ImageView fileDirFolderImage;
-	@BindView(R.id.fileDirTitle) TextView fileDirTitle;
-	@BindView(R.id.fileDirPath) TextView fileDirPath;
+	@BindView(R2.id.fileDirFolderImage) ImageView fileDirFolderImage;
+	@BindView(R2.id.fileDirTitle) TextView fileDirTitle;
+	@BindView(R2.id.fileDirPath) TextView fileDirPath;
 
-	@BindView(R.id.structureRecycler) RecyclerView structureRecycler;
+	@BindView(R2.id.structureRecycler) RecyclerView structureRecycler;
 
-	@BindView(R.id.cancelButton) Button cancelButton;
-	@BindView(R.id.selectButton) Button selectButton;
+	@BindView(R2.id.cancelButton) Button cancelButton;
+	@BindView(R2.id.selectButton) Button selectButton;
 
 	private final Comparator<Entry> defaultSortingComparator = (o1, o2) -> o1.getName().compareTo(o2.getName());
 
@@ -309,13 +309,13 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		}
 	}
 
-	@OnClick(R.id.cancelButton)
+	@OnClick(R2.id.cancelButton)
 	public void cancelButtonOnClick()
 	{
 		getDialog().dismiss();
 	}
 
-	@OnClick(R.id.selectButton)
+	@OnClick(R2.id.selectButton)
 	public void selectButtonOnClick()
 	{
 		getDialog().dismiss();

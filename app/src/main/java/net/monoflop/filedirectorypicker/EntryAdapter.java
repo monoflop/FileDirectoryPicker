@@ -133,10 +133,10 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 
 	static class EntryViewHolder extends RecyclerView.ViewHolder
 	{
-		@BindView(R.id.entryImage) ImageView entryImage;
-		@BindView(R.id.entryName) TextView entryName;
-		@BindView(R.id.entryInfo) TextView entryInfo;
-		@BindView(R.id.entryCheckBox) CheckBox entryCheckBox;
+		@BindView(R2.id.entryImage) ImageView entryImage;
+		@BindView(R2.id.entryName) TextView entryName;
+		@BindView(R2.id.entryInfo) TextView entryInfo;
+		@BindView(R2.id.entryCheckBox) CheckBox entryCheckBox;
 
 		RelativeLayout root;
 

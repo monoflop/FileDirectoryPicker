@@ -26,6 +26,13 @@ final class FileUtils
 {
 	private FileUtils(){}
 
+	/**
+	 * Modified version of https://programming.guide/java/formatting-byte-size-to-human-readable-format.html
+	 * @param locale Respect local device settings in string.format
+	 * @param bytes Size in bytes
+	 * @param si Use power of 2 or rounded values
+	 * @return Human readable byte count
+	 */
 	static String humanReadableByteCount(@NonNull Locale locale, long bytes, boolean si)
 	{
 		int unit = si ? 1000 : 1024;

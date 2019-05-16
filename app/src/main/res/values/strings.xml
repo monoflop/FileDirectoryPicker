@@ -1,6 +1,4 @@
 <resources>
-    <string name="app_name">FileDirectoryPicker</string>
-
     <string name="picker_title_single_file">Select one File</string>
     <string name="picker_title_single_folder">Select one Folder</string>
     <string name="picker_title_files_and_folders">Select File(s) or Folder(s)</string>
