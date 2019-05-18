@@ -17,6 +17,7 @@
 package net.monoflop.filedirectorypicker;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.widget.ImageViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -52,11 +54,13 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 	private List<FileDirectoryPickerDialog.Entry> entryList;
 	private EntrySelectedCallback entrySelectedCallback;
 	private ViewMode viewMode;
+	private FileDirectoryPickerDialog.CustomTheme customTheme;
 
 	EntryAdapter(@NonNull Context context,
 	             @NonNull List<FileDirectoryPickerDialog.Entry> entryList,
 	             @NonNull EntrySelectedCallback entrySelectedCallback,
-	             @Nullable ViewMode viewMode)
+	             @Nullable ViewMode viewMode,
+	             @Nullable FileDirectoryPickerDialog.CustomTheme customTheme)
 	{
 		this.context = context;
 		this.entryList = entryList;
@@ -64,6 +68,8 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 
 		this.viewMode = viewMode;
 		if(this.viewMode == null)this.viewMode = ViewMode.Default;
+
+		this.customTheme = customTheme;
 	}
 
 	@Override
@@ -81,6 +87,14 @@ class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder>
 	public void onBindViewHolder(@NonNull EntryViewHolder holder, int position)
 	{
 		FileDirectoryPickerDialog.Entry entry = entryList.get(position);
+
+		//Apply theme
+		if(customTheme != null)
+		{
+			ImageViewCompat.setImageTintList(holder.entryImage, ColorStateList.valueOf(customTheme.getEntryImage()));
+			holder.entryName.setTextColor(customTheme.getEntryName());
+			holder.entryInfo.setTextColor(customTheme.getEntryInfo());
+		}
 
 		//Removes old listeners of recycled elements
 		//Remove onCheckedChangeListener before setting the selected status.

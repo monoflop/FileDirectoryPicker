@@ -17,6 +17,8 @@
 package net.monoflop.filedirectorypicker;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -29,13 +31,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
 import androidx.annotation.UiThread;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -49,6 +55,7 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,6 +82,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	public static final int ERROR_EXTERNAL_STORAGE_NOT_AVAILABLE = 2;
 
 	//View binding
+	@BindView(R2.id.rootLayout) LinearLayout rootLayout;
+
+	@BindView(R2.id.headerLayout) RelativeLayout headerLayout;
 	@BindView(R2.id.fileDirFolderImage) ImageView fileDirFolderImage;
 	@BindView(R2.id.fileDirTitle) TextView fileDirTitle;
 	@BindView(R2.id.fileDirPath) TextView fileDirPath;
@@ -103,6 +113,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	private boolean showAnimation;
 	private int animationStyle;
 	private boolean showDirectoryInfo;
+	private CustomTheme customTheme;
 
 	private PickerResultListener pickerResultListener;
 	private PickerErrorListener pickerErrorListener;
@@ -186,6 +197,9 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		animationStyle = bundle.getInt("animationStyle");
 		showDirectoryInfo = bundle.getBoolean("showDirectoryInfo");
 
+		if(bundle.containsKey("customTheme"))
+			customTheme = (CustomTheme)bundle.getSerializable("customTheme");
+
 		if(bundle.containsKey("pickerResultListener"))
 			pickerResultListener = bundle.getParcelable("pickerResultListener");
 
@@ -217,7 +231,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		selectedFiles = new ArrayList<>();
 		selectedFolders = new ArrayList<>();
 		entryList = new ArrayList<>();
-		entryAdapter = new EntryAdapter(requireContext(), entryList, this, viewMode);
+		entryAdapter = new EntryAdapter(requireContext(), entryList, this, viewMode, customTheme);
 	}
 
 	@Nullable
@@ -238,9 +252,27 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		structureRecycler.addItemDecoration(itemDecor);
 		structureRecycler.setItemAnimator(null);
 
+		//Apply theme colors
+		if(customTheme != null)
+		{
+			ImageViewCompat.setImageTintList(fileDirFolderImage, ColorStateList.valueOf(customTheme.getHeaderImage()));
+			fileDirTitle.setTextColor(customTheme.getHeaderTitle());
+			fileDirPath.setTextColor(customTheme.getHeaderPath());
+			headerLayout.setBackgroundColor(customTheme.getHeaderBackground());
+			rootLayout.setBackgroundColor(customTheme.getBackground());
+		}
+
 		//Set appropriate dialog title
-		if(singleFileMode) fileDirTitle.setText(getString(R.string.picker_title_single_file));
-		else if(singleFolderMode) fileDirTitle.setText(getString(R.string.picker_title_single_folder));
+		if(singleFileMode)
+		{
+			fileDirTitle.setText(getString(R.string.picker_title_single_file));
+			selectButton.setEnabled(false);
+		}
+		else if(singleFolderMode)
+		{
+			fileDirTitle.setText(getString(R.string.picker_title_single_folder));
+			selectButton.setEnabled(false);
+		}
 		else
 		{
 			if(selectFiles && selectFolders)
@@ -828,6 +860,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		private boolean showAnimation = true;
 		private int animationStyle = R.style.DialogAnimation;
 		private boolean showDirectoryInfo = false;
+		private CustomTheme customTheme;
 
 		//Listeners
 		private PickerResultListener pickerResultListener;
@@ -924,6 +957,12 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			return this;
 		}
 
+		public Builder customTheme(@NonNull CustomTheme customTheme)
+		{
+			this.customTheme = customTheme;
+			return this;
+		}
+
 		private Bundle toBundle()
 		{
 			Bundle bundle = new Bundle();
@@ -945,6 +984,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			bundle.putBoolean("showAnimation", showAnimation);
 			bundle.putInt("animationStyle", animationStyle);
 			bundle.putBoolean("showDirectoryInfo", showDirectoryInfo);
+			if(customTheme != null)
+				bundle.putSerializable("customTheme", customTheme);
 
 			if(pickerResultListener != null)
 				bundle.putParcelable("pickerResultListener", pickerResultListener);
@@ -956,6 +997,190 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				bundle.putStringArray("fileEndingFilter", fileEndingFilter);
 
 			return bundle;
+		}
+	}
+
+	public static class CustomTheme implements Serializable
+	{
+		private int headerImage;
+		private int headerTitle;
+		private int headerPath;
+		private int headerBackground;
+		private int background;
+		private int entryImage;
+		private int entryName;
+		private int entryInfo;
+
+		private CustomTheme(Builder builder)
+		{
+			setHeaderImage(builder.headerImage);
+			setHeaderTitle(builder.headerTitle);
+			setHeaderPath(builder.headerPath);
+			setHeaderBackground(builder.headerBackground);
+			setBackground(builder.background);
+			setEntryImage(builder.entryImage);
+			setEntryName(builder.entryName);
+			setEntryInfo(builder.entryInfo);
+		}
+
+		public int getHeaderImage()
+		{
+			return headerImage;
+		}
+
+		public void setHeaderImage(@ColorInt int headerImage)
+		{
+			this.headerImage = headerImage;
+		}
+
+		public int getHeaderTitle()
+		{
+			return headerTitle;
+		}
+
+		public void setHeaderTitle(@ColorInt int headerTitle)
+		{
+			this.headerTitle = headerTitle;
+		}
+
+		public int getHeaderPath()
+		{
+			return headerPath;
+		}
+
+		public void setHeaderPath(@ColorInt int headerPath)
+		{
+			this.headerPath = headerPath;
+		}
+
+		public int getHeaderBackground()
+		{
+			return headerBackground;
+		}
+
+		public void setHeaderBackground(@ColorInt int headerBackground)
+		{
+			this.headerBackground = headerBackground;
+		}
+
+		public int getBackground()
+		{
+			return background;
+		}
+
+		public void setBackground(@ColorInt int background)
+		{
+			this.background = background;
+		}
+
+		public int getEntryImage()
+		{
+			return entryImage;
+		}
+
+		public void setEntryImage(@ColorInt int entryImage)
+		{
+			this.entryImage = entryImage;
+		}
+
+		public int getEntryName()
+		{
+			return entryName;
+		}
+
+		public void setEntryName(@ColorInt int entryName)
+		{
+			this.entryName = entryName;
+		}
+
+		public int getEntryInfo()
+		{
+			return entryInfo;
+		}
+
+		public void setEntryInfo(@ColorInt int entryInfo)
+		{
+			this.entryInfo = entryInfo;
+		}
+
+
+		public static final class Builder
+		{
+			private int headerImage;
+			private int headerTitle;
+			private int headerPath;
+			private int headerBackground;
+			private int background;
+			private int entryImage;
+			private int entryName;
+			private int entryInfo;
+
+
+			public Builder(@NonNull Context context)
+			{
+				//Load default values
+				headerImage = context.getResources().getColor(R.color.white);
+				headerTitle = context.getResources().getColor(R.color.white);
+				headerPath = context.getResources().getColor(R.color.white);
+				headerBackground = context.getResources().getColor(R.color.colorPrimary);
+				background = context.getResources().getColor(R.color.white);
+				entryImage = context.getResources().getColor(R.color.colorPrimary);
+				entryName = context.getResources().getColor(R.color.black);
+				entryInfo = context.getResources().getColor(R.color.gray);
+			}
+
+			public Builder headerImage(@ColorInt int val)
+			{
+				headerImage = val;
+				return this;
+			}
+
+			public Builder headerTitle(@ColorInt int val)
+			{
+				headerTitle = val;
+				return this;
+			}
+
+			public Builder headerPath(@ColorInt int val)
+			{
+				headerPath = val;
+				return this;
+			}
+
+			public Builder headerBackground(@ColorInt int val)
+			{
+				headerBackground = val;
+				return this;
+			}
+
+			public Builder background(@ColorInt int val)
+			{
+				background = val;
+				return this;
+			}
+
+			public Builder entryImage(@ColorInt int val)
+			{
+				entryImage = val;
+				return this;
+			}
+
+			public Builder entryName(@ColorInt int val)
+			{
+				entryName = val;
+				return this;
+			}
+
+			public Builder entryInfo(@ColorInt int val)
+			{
+				entryInfo = val;
+				return this;
+			}
+
+			public CustomTheme build()
+			{
+				return new CustomTheme(this);
+			}
 		}
 	}
 }
