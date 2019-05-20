@@ -4,6 +4,7 @@
     <string name="picker_title_files_and_folders">Select File(s) or Folder(s)</string>
     <string name="picker_title_files">Select File(s)</string>
     <string name="picker_title_folders">Select Folder(s)</string>
+    <string name="picker_title_single_file_folder">Select one File or Folder</string>
     <string name="button_select">Select</string>
     <string name="picker_title_select_n">Select (%d)</string>
     <string name="button_cancel">Cancel</string>

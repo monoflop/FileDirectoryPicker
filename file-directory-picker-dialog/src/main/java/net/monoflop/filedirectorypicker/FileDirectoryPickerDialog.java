@@ -213,7 +213,11 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		//ViewMode is passed to the adapter in order to
 		//decide if files and/or folders are selectable
 		EntryAdapter.ViewMode viewMode;
-		if(singleFileMode) viewMode = EntryAdapter.ViewMode.FilesOnly;
+		if(singleFileMode && singleFolderMode)
+		{
+			viewMode = EntryAdapter.ViewMode.Default;
+		}
+		else if(singleFileMode) viewMode = EntryAdapter.ViewMode.FilesOnly;
 		else if(singleFolderMode) viewMode = EntryAdapter.ViewMode.FoldersOnly;
 		else
 		{
@@ -263,7 +267,12 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		}
 
 		//Set appropriate dialog title
-		if(singleFileMode)
+		if(singleFileMode && singleFolderMode)
+		{
+			fileDirTitle.setText(getString(R.string.picker_title_single_file_folder));
+			selectButton.setEnabled(false);
+		}
+		else if(singleFileMode)
 		{
 			fileDirTitle.setText(getString(R.string.picker_title_single_file));
 			selectButton.setEnabled(false);
@@ -398,12 +407,76 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 	{
 		File selectedFile = entry.getFile();
 
+		//Allow only one file or one folder to be selected
+		if(singleFileMode && singleFolderMode)
+		{
+			if(selected)
+			{
+				//Deselect all entries
+				for(Entry activeEntry : entryList)
+				{
+					if(activeEntry.isSelected() && !activeEntry.getFile().equals(selectedFile))
+					{
+						activeEntry.setSelected(false);
+						entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry));
+					}
+				}
+
+				//Clear selected files and folders
+				selectedFiles.clear();
+				selectedFolders.clear();
+
+				//Add selected file or folder
+				if (selectedFile.isFile())
+				{
+					selectedFiles.add(selectedFile);
+				}
+				else if (selectedFile.isDirectory())
+				{
+					selectedFolders.add(selectedFile);
+				}
+			}
+			else
+			{
+				if (selectedFile.isFile())
+				{
+					selectedFiles.remove(selectedFile);
+				} else if (selectedFile.isDirectory())
+				{
+					selectedFolders.remove(selectedFile);
+				}
+			}
+
+			//Update select button
+			if(selectedFiles.size() + selectedFolders.size() == 1)
+			{
+				selectButton.setEnabled(true);
+			}
+			else
+			{
+				selectButton.setEnabled(false);
+			}
+		}
 		//Single file and single folder mode
-		if(singleFileMode || singleFolderMode)
+		else if(singleFileMode || singleFolderMode)
 		{
 			//Allow only one file or folder to select
-			if(selected && (selectedFiles.size() + selectedFolders.size()) == 0)
+			if(selected)
 			{
+				//Deselect all entries
+				for(Entry activeEntry : entryList)
+				{
+					if(activeEntry.isSelected() && !activeEntry.getFile().equals(selectedFile))
+					{
+						activeEntry.setSelected(false);
+						entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry));
+					}
+				}
+
+				//Clear selected files and folders
+				selectedFiles.clear();
+				selectedFolders.clear();
+
 				if (selectedFile.isFile())
 				{
 					selectedFiles.add(selectedFile);
@@ -412,8 +485,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 					selectedFolders.add(selectedFile);
 				}
 			}
-			//Un select
-			else if(!selected)
+			//Deselect
+			else
 			{
 				if (selectedFile.isFile())
 				{
@@ -1103,7 +1176,6 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			this.entryInfo = entryInfo;
 		}
 
-
 		public static final class Builder
 		{
 			private int headerImage;
@@ -1114,7 +1186,6 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			private int entryImage;
 			private int entryName;
 			private int entryInfo;
-
 
 			public Builder(@NonNull Context context)
 			{
@@ -1129,51 +1200,51 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				entryInfo = context.getResources().getColor(R.color.gray);
 			}
 
-			public Builder headerImage(@ColorInt int val)
+			public Builder headerImage(@ColorInt int color)
 			{
-				headerImage = val;
+				headerImage = color;
 				return this;
 			}
 
-			public Builder headerTitle(@ColorInt int val)
+			public Builder headerTitle(@ColorInt int color)
 			{
-				headerTitle = val;
+				headerTitle = color;
 				return this;
 			}
 
-			public Builder headerPath(@ColorInt int val)
+			public Builder headerPath(@ColorInt int color)
 			{
-				headerPath = val;
+				headerPath = color;
 				return this;
 			}
 
-			public Builder headerBackground(@ColorInt int val)
+			public Builder headerBackground(@ColorInt int color)
 			{
-				headerBackground = val;
+				headerBackground = color;
 				return this;
 			}
 
-			public Builder background(@ColorInt int val)
+			public Builder background(@ColorInt int color)
 			{
-				background = val;
+				background = color;
 				return this;
 			}
 
-			public Builder entryImage(@ColorInt int val)
+			public Builder entryImage(@ColorInt int color)
 			{
-				entryImage = val;
+				entryImage = color;
 				return this;
 			}
 
-			public Builder entryName(@ColorInt int val)
+			public Builder entryName(@ColorInt int color)
 			{
-				entryName = val;
+				entryName = color;
 				return this;
 			}
 
-			public Builder entryInfo(@ColorInt int val)
+			public Builder entryInfo(@ColorInt int color)
 			{
-				entryInfo = val;
+				entryInfo = color;
 				return this;
 			}
 
