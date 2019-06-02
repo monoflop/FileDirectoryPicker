@@ -5,6 +5,7 @@ Simple file and directory picker library for Android.
 * Select file(s)
 * Select folder(s)
 * Filter file extensions
+* Customize dialog theme
 
 ![Screenshot](/image/screen1.png?raw=true "Screenshot")
 
@@ -25,7 +26,7 @@ Add the dependency
 
 ```
 dependencies {
-    implementation 'com.github.monoflop:FileDirectoryPicker:1.0.0'
+    implementation 'com.github.monoflop:FileDirectoryPicker:1.1.0'
 }
 ```
 
@@ -47,6 +48,20 @@ dependencies {
 | showAnimations | Show window animation | true |
 | customAnimation | Customize window animation with style. Overwrite android:windowEnterAnimation and android:windowExitAnimation. | null |
 | showDirectoryInfo | Show folder size and file count | false |
+| customTheme | Customize dialog theme | null |
+
+### Custom theme builder
+| function                    | description               | default value |
+| :--------------------------:| :-----------:             | :-----------: |
+| headerImage | Header image color | #ffffff |
+| headerTitle | Header title color | #ffffff |
+| headerPath | Header path color | #ffffff |
+| headerBackground | Header background color | colorPrimary |
+| background | Background color | #ffffff |
+| entryImage | File / folder image color | colorPrimary |
+| entryName | File / folder name color | #000000 |
+| entryInfo | File / folder size / count color | #8F8F8F |
+
 
 
 ```java

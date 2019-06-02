@@ -418,7 +418,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 					if(activeEntry.isSelected() && !activeEntry.getFile().equals(selectedFile))
 					{
 						activeEntry.setSelected(false);
-						entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry));
+						requireActivity().runOnUiThread(() ->
+								entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry)));
 					}
 				}
 
@@ -434,6 +435,15 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				else if (selectedFile.isDirectory())
 				{
 					selectedFolders.add(selectedFile);
+				}
+
+				//Mark entry as selected
+				for(Entry activeEntry : entryList)
+				{
+					if(activeEntry.getFile().equals(selectedFile))
+					{
+						activeEntry.setSelected(true);
+					}
 				}
 			}
 			else
@@ -469,7 +479,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 					if(activeEntry.isSelected() && !activeEntry.getFile().equals(selectedFile))
 					{
 						activeEntry.setSelected(false);
-						entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry));
+						requireActivity().runOnUiThread(() ->
+								entryAdapter.notifyItemChanged(entryList.indexOf(activeEntry)));
 					}
 				}
 
@@ -483,6 +494,15 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				} else if (selectedFile.isDirectory())
 				{
 					selectedFolders.add(selectedFile);
+				}
+
+				//Mark entry as selected
+				for(Entry activeEntry : entryList)
+				{
+					if(activeEntry.getFile().equals(selectedFile))
+					{
+						activeEntry.setSelected(true);
+					}
 				}
 			}
 			//Deselect
@@ -510,7 +530,7 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		else
 		{
 			//Select new entry
-			if (selected)
+			if(selected)
 			{
 				if (selectedFile.isFile())
 				{
