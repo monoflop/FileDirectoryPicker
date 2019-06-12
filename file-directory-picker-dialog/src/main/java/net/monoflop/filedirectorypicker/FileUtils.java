@@ -16,21 +16,30 @@
 
 package net.monoflop.filedirectorypicker;
 
+import android.content.Context;
+import android.os.storage.StorageManager;
+
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 final class FileUtils
 {
-	private FileUtils(){}
+	private FileUtils()
+	{
+	}
 
 	/**
 	 * Modified version of https://programming.guide/java/formatting-byte-size-to-human-readable-format.html
+	 *
 	 * @param locale Respect local device settings in string.format
-	 * @param bytes Size in bytes
-	 * @param si Use si prefix (power of 2 or rounded values)
+	 * @param bytes  Size in bytes
+	 * @param si     Use si prefix (power of 2 or rounded values)
 	 * @return Human readable byte count
 	 */
 	static String humanReadableByteCount(@NonNull Locale locale, long bytes, boolean si)
@@ -38,8 +47,8 @@ final class FileUtils
 		int unit = si ? 1000 : 1024;
 		if (bytes < unit) return bytes + " B";
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
-		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
-		return String.format(locale,"%.1f %sB", bytes / Math.pow(unit, exp), pre);
+		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+		return String.format(locale, "%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 
 	/**
@@ -64,13 +73,12 @@ final class FileUtils
 		long size = 0;
 		File[] files = folder.listFiles();
 
-		for(File file : files)
+		for (File file : files)
 		{
-			if(file.isFile())
+			if (file.isFile())
 			{
 				size += file.length();
-			}
-			else
+			} else
 			{
 				size += getFolderSize(file);
 			}
@@ -92,14 +100,13 @@ final class FileUtils
 
 		File[] files = folder.listFiles();
 
-		for(File file : files)
+		for (File file : files)
 		{
-			if(file.isFile())
+			if (file.isFile())
 			{
 				size += file.length();
 				fileCount++;
-			}
-			else
+			} else
 			{
 				FolderInfo folderInfo = getFolderInfo(file);
 				size += folderInfo.getSize();
@@ -143,5 +150,42 @@ final class FileUtils
 		{
 			this.fileCount = fileCount;
 		}
+	}
+
+	/**
+	 * Get SDCard path.
+	 * By https://gist.github.com/PauloLuan/4bcecc086095bce28e22#gistcomment-2591001
+	 * @param context Context
+	 * @return Path of SDCard root directory
+	 */
+	//@TODO !!!!!!!!!!
+	public static String getSDCardPath(@NonNull Context context)
+	{
+		StorageManager mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+		Class<?> storageVolumeClazz;
+		try
+		{
+			storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
+			Method getVolumeList = mStorageManager.getClass().getMethod("getVolumeList");
+			Method getPath = storageVolumeClazz.getMethod("getPath");
+			Method isRemovable = storageVolumeClazz.getMethod("isRemovable");
+			Object result = getVolumeList.invoke(mStorageManager);
+			final int length = Array.getLength(result);
+			for (int i = 0; i < length; i++)
+			{
+				Object storageVolumeElement = Array.get(result, i);
+				String path = (String) getPath.invoke(storageVolumeElement);
+				boolean removable = (Boolean) isRemovable.invoke(storageVolumeElement);
+				if(removable)
+				{
+					return path;
+				}
+			}
+		}
+		catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e)
+		{
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

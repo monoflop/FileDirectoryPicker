@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_select">Auswählen</string>
+    <string name="button_cancel">Abbrechen</string>
+    <string name="picker_title_files">Datei(en) auswählen</string>
+    <string name="picker_title_files_and_folders">Datei(en) oder Ordner auswählen</string>
+    <string name="picker_title_folders">Ordner auswählen</string>
+    <string name="picker_title_select_n">(%d) Auswählen</string>
+    <string name="picker_title_single_file">Eine Datei auswählen</string>
+    <string name="picker_title_single_file_folder">Eine Datei oder Ordner auswählen</string>
+    <string name="picker_title_single_folder">Einen Ordner auswählen</string>
+</resources>
