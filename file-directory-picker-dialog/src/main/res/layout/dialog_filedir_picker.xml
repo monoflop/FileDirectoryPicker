@@ -98,6 +98,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:textColor="@color/white"
                     android:text="@string/button_cancel"/>
 
             </FrameLayout>
@@ -113,6 +114,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:textColor="@color/white"
                     android:text="@string/button_select"/>
 
             </FrameLayout>
