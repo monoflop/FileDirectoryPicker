@@ -29,7 +29,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -47,6 +46,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -91,8 +91,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 
 	@BindView(R2.id.structureRecycler) RecyclerView structureRecycler;
 
-	@BindView(R2.id.cancelButton) Button cancelButton;
-	@BindView(R2.id.selectButton) Button selectButton;
+	@BindView(R2.id.cancelButton) MaterialButton cancelButton;
+	@BindView(R2.id.selectButton) MaterialButton selectButton;
 
 	//Default file sorting Comparator
 	private final Comparator<Entry> defaultSortingComparator = (o1, o2) -> o1.getName().compareTo(o2.getName());
@@ -264,6 +264,12 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			fileDirPath.setTextColor(customTheme.getHeaderPath());
 			headerLayout.setBackgroundColor(customTheme.getHeaderBackground());
 			rootLayout.setBackgroundColor(customTheme.getBackground());
+
+			cancelButton.setBackgroundColor(customTheme.getButtonBackground());
+			cancelButton.setTextColor(customTheme.getButtonText());
+
+			selectButton.setBackgroundColor(customTheme.getButtonBackground());
+			selectButton.setTextColor(customTheme.getButtonText());
 		}
 
 		//Set appropriate dialog title
@@ -1103,6 +1109,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 		private int entryImage;
 		private int entryName;
 		private int entryInfo;
+		private int buttonBackground;
+		private int buttonText;
 
 		private CustomTheme(Builder builder)
 		{
@@ -1114,6 +1122,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			setEntryImage(builder.entryImage);
 			setEntryName(builder.entryName);
 			setEntryInfo(builder.entryInfo);
+			setButtonBackground(builder.buttonBackground);
+			setButtonText(builder.buttonText);
 		}
 
 		public int getHeaderImage()
@@ -1196,6 +1206,26 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			this.entryInfo = entryInfo;
 		}
 
+		public int getButtonBackground()
+		{
+			return buttonBackground;
+		}
+
+		public void setButtonBackground(int buttonBackground)
+		{
+			this.buttonBackground = buttonBackground;
+		}
+
+		public int getButtonText()
+		{
+			return buttonText;
+		}
+
+		public void setButtonText(int buttonText)
+		{
+			this.buttonText = buttonText;
+		}
+
 		public static final class Builder
 		{
 			private int headerImage;
@@ -1206,6 +1236,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			private int entryImage;
 			private int entryName;
 			private int entryInfo;
+			private int buttonBackground;
+			private int buttonText;
 
 			public Builder(@NonNull Context context)
 			{
@@ -1218,6 +1250,8 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 				entryImage = context.getResources().getColor(R.color.colorPrimary);
 				entryName = context.getResources().getColor(R.color.black);
 				entryInfo = context.getResources().getColor(R.color.gray);
+				buttonBackground = context.getResources().getColor(R.color.colorAccent);
+				buttonText = context.getResources().getColor(R.color.white);
 			}
 
 			public Builder headerImage(@ColorInt int color)
@@ -1265,6 +1299,18 @@ public class FileDirectoryPickerDialog extends DialogFragment implements EntryAd
 			public Builder entryInfo(@ColorInt int color)
 			{
 				entryInfo = color;
+				return this;
+			}
+
+			public Builder buttonBackground(@ColorInt int color)
+			{
+				buttonBackground = color;
+				return this;
+			}
+
+			public Builder buttonText(@ColorInt int color)
+			{
+				buttonText = color;
 				return this;
 			}
 
